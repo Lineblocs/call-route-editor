@@ -1,0 +1,73 @@
+<div>
+
+  <md-toolbar class="md-hue-1">
+    <div class="md-toolbar-tools">
+      <h2>Create Flow</h2>
+    </div>
+  </md-toolbar>
+  <md-content layout="row" layout-padding></md-content>
+  <div>
+    <md-input-container class="compact-input">
+
+      <label>Name</label>
+      <input ng-model="values.name">
+    </md-input-container>
+    <ul class="no-list-style">
+      <li ng-repeat="category in templatesByCategory">
+        <div layout="row" class="templates-list">
+          <h2 class="margin-md-card">{{category.name}}</h2>
+        </div>
+        <div layout="row" class="templates-list">
+          <div flex="33">
+            <md-card>
+              <md-card-title>
+                <md-card-title-text>
+                  <span class="md-headline">Blank</span>
+                  <span class="md-subhead"></span>
+                </md-card-title-text>
+                <md-card-title-media>
+                  <div class="md-media-sm card-media"></div>
+                </md-card-title-media>
+              </md-card-title>
+              <md-card-actions layout="row" layout-align="end center">
+                <md-button ng-show="!isSelected(blankTemplate)" class="md-raised md-primary"
+                  ng-click="useTemplate(blankTemplate)">
+                  Use Template</md-button>
+                <md-button ng-show="isSelected(blankTemplate)" ng-disabled="true" class="md-raised md-primary">Use Template
+                </md-button>
+              </md-card-actions>
+            </md-card>
+          </div>
+
+          <div flex="33" ng-repeat="template in category.templates">
+            <md-card>
+              <md-card-title>
+                <md-card-title-text>
+                  <span class="md-headline">{{template.name}}</span>
+                  <span class="md-subhead"></span>
+                </md-card-title-text>
+                <md-card-title-media>
+                  <div class="md-media-sm card-media"></div>
+                </md-card-title-media>
+              </md-card-title>
+              <md-card-actions layout="row" layout-align="end center">
+                <md-button ng-show="!isSelected(template)" class="md-raised md-primary"
+                  ng-click="useTemplate(template)">
+                  Use Template</md-button>
+                <md-button ng-show="isSelected(template)" ng-disabled="true" class="md-raised md-primary">Use Template
+                </md-button>
+              </md-card-actions>
+            </md-card>
+          </div>
+        </div>
+        </li>
+    </ul>
+
+  </div>
+</div>
+
+  <md-button ng-disabled="!selectedTemplate" ng-click="submit()" class="md-raised md-primary">Create</md-button>
+</div>
+</md-content>
+
+</div>
