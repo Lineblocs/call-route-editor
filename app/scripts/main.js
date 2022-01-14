@@ -1428,7 +1428,7 @@ angular
         serverData['name'] = $shared.flow.name;
         serverData['flow_json'] = JSON.stringify(params);
         $shared.isCreateLoading = true;
-        $http.post(createUrl("/flow/updateFlow/" + flowId), serverData).then(function () {
+        $http.post(createUrl("/routerflow/updateFlow/" + flowId), serverData).then(function () {
           $shared.isCreateLoading = false;
           showSaved(ev);
           stateActions.lastSave = Date.now();
@@ -1471,12 +1471,12 @@ angular
         data['template_id'] = $scope.selectedTemplate.id;
       }
       $shared.isCreateLoading = true;
-      $http.post(createUrl("/flow/saveFlow"), data).then(function (res) {
+      $http.post(createUrl("/routerflow/saveFlow"), data).then(function (res) {
         $shared.isCreateLoading = false;
         console.log("response arguments ", arguments);
-        console.log("response headers ", res.headers('X-Flow-ID'));
+        console.log("response headers ", res.headers('X-RouterFlow-ID'));
         console.log("response body ", res.body);
-        var id = res.headers('X-Flow-ID');
+        var id = res.headers('X-RouterFlow-ID');
         var urlObj = URI(document.location.href);
         var query = urlObj.query(true);
         var token = query.auth;
@@ -1493,7 +1493,7 @@ angular
             }
             return;
           } 
-           var url = "/adjust?flowId=" + id + "&templateId=" + data['template_id'] + "&auth=" + token + "&workspaceId=" + query.workspaceId;
+           var url = "/edit?flowId=" + id + "&templateId=" + data['template_id'] + "&auth=" + token + "&workspaceId=" + query.workspaceId;
             if ( query.admin ) {
               url += "&admin=" + query.admin;
             }
@@ -1518,7 +1518,7 @@ angular
 
     function init() {
       $shared.isLoading = true;
-      $http.get(createUrl("/flow/listTemplates")).then(function (res) {
+      $http.get(createUrl("/routerflow/listTemplates")).then(function (res) {
         $shared.isLoading = false;
         console.log("flow templates are ", res.data);
         var templates = res.data.data;
@@ -1774,8 +1774,8 @@ angular
     }
 
     $scope.flowWasStarted = function () {
-      console.log("flowWasStarted ", $shared.flow);
-      if ($shared.flow && $shared.flow.started) {
+     console.log("flowWasStarted ", $shared.flow);
+      if ($shared.flow) {
         return true;
       }
 
@@ -1798,7 +1798,7 @@ angular
       if ($scope.selectedTemplate) {
         data['template_id'] = $scope.selectedTemplate.id;
       }
-      $http.post(createUrl("/flow/updateFlow/" + $shared.flow.public_id), data).then(function (res) {
+      $http.post(createUrl("/routerflow/updateFlow/" + $shared.flow.public_id), data).then(function (res) {
         $shared.flow.started = true;
         load();
       });
@@ -1851,106 +1851,94 @@ angular
       };
       $shared.isLoading = true;
       var url = createUrl("/extension/listExtensions");
-      $q.all([
-        $scope.updateFunctions(),
-        $shared.loadExtensions(),
-        $shared.loadWidgetTemplates(),
-      ]).then(function (responses) {
-        var extensions = responses[1];
-        console.log("extensions are ", extensions);
-        $shared.extensions = extensions;
-        $timeout(function () {
-          window['angularScope'] = angular.element(document.getElementById('scopeCtrl')).scope();
-          var graph;
-          if (search.flowId) {
-            $q.all([
-              $http.get(createUrl("/flow/flowData/" + search.flowId)),
-              $http.get(createUrl("/flow/listTemplates"))
-            ]).then(function (res) {
-              console.log("flow templates are ", res[1].data);
-              $scope.templates = res[1].data.data;
-              $shared.flow = {
-                "started": true
-              };
-              $shared.isLoading = false;
-              console.log("fetch JSON is ", res[0]);
-              $timeout(function () {
-                $shared.flow = res[0].data;
-                if (!$shared.flow.started) {
-                  return;
-                }
-                initializeDiagram();
-                graph = diagram['graph'];
+      $timeout(function () {
+        window['angularScope'] = angular.element(document.getElementById('scopeCtrl')).scope();
+        var graph;
+        if (search.flowId) {
+          $q.all([
+            $http.get(createUrl("/routerflow/flowData/" + search.flowId)),
+            $http.get(createUrl("/routerflow/listTemplates"))
+          ]).then(function (res) {
+            console.log("flow templates are ", res[1].data);
+            $scope.templates = res[1].data.data;
+            $shared.flow = {
+              "started": true
+            };
+            $shared.isLoading = false;
+            console.log("fetch JSON is ", res[0]);
+            $timeout(function () {
+              $shared.flow = res[0].data;
+              initializeDiagram();
+              graph = diagram['graph'];
 
-                if (res[0].data.flow_json) {
+              if (res[0].data.flow_json) {
 
-                  var data = JSON.parse(res[0].data.flow_json);
-                  console.log("loading graph data ", data);
-                  graph.fromJSON(data.graph);
-                  var cells = graph.getCells();
-                  for (var index in cells) {
-                    var cell = cells[index];
-                    console.log("checking if cell needs dynamic ports ", cell);
-                    if (cell.attributes.type === 'devs.SwitchModel') {
-                      for (var index1 in data.models) {
-                        var model = data.models[index1];
-                        if (model.id === cell.id) {
-                          for (var index2 in model.links) {
-                            var link = model.links[index2];
-                            createDynamicPort(cell, link);
-                          }
-                        }
-                      }
-                    }
-                  }
-                  for (var index in data.models) {
-                    var model = data.models[index];
-                    for (var index1 in cells) {
-                      var cell = cells[index1];
+                var data = JSON.parse(res[0].data.flow_json);
+                console.log("loading graph data ", data);
+                graph.fromJSON(data.graph);
+                var cells = graph.getCells();
+                for (var index in cells) {
+                  var cell = cells[index];
+                  console.log("checking if cell needs dynamic ports ", cell);
+                  if (cell.attributes.type === 'devs.SwitchModel') {
+                    for (var index1 in data.models) {
+                      var model = data.models[index1];
                       if (model.id === cell.id) {
-                        var links = [];
                         for (var index2 in model.links) {
                           var link = model.links[index2];
-                          var obj1 = new Link(null, null, link.label, link.type, link.condition, link.value, link.cell, []);
-                          links.push(obj1);
+                          createDynamicPort(cell, link);
                         }
-                        var obj2 = new Model(cell, model.name, links, model.data);
-                        addCellArgs(obj2);
-                        console.log("pushing model ", obj2);
-                        $shared.models.push(obj2);
                       }
                     }
                   }
-                  $shared.cellModel = null;
-                } else {
-                  var launch = new joint.shapes.devs.LaunchModel({
-                    position: {
-                      x: 15, 
-                      y: 180
-                    }
-                  });
-                  var subtractPaddingTop = 240;
-                  var size = launch.size();
-                  console.log("launch size is ", size);
-                  /*
-                  launch.position(
-                    $("#canvas").width() / 2 - (size.width / 2),
-                    ($("#canvas").height()/2 - (size.height / 2)) - subtractPaddingTop
-                  );
-                  */
-
-                  graph.addCell(launch);
-                  $scope.createModel(launch, "Launch");
-                  $shared.isLoading = false;
                 }
+                for (var index in data.models) {
+                  var model = data.models[index];
+                  for (var index1 in cells) {
+                    var cell = cells[index1];
+                    if (model.id === cell.id) {
+                      var links = [];
+                      for (var index2 in model.links) {
+                        var link = model.links[index2];
+                        var obj1 = new Link(null, null, link.label, link.type, link.condition, link.value, link.cell, []);
+                        links.push(obj1);
+                      }
+                      var obj2 = new Model(cell, model.name, links, model.data);
+                      addCellArgs(obj2);
+                      console.log("pushing model ", obj2);
+                      $shared.models.push(obj2);
+                    }
+                  }
+                }
+                $shared.cellModel = null;
+              } else {
+                var launch = new joint.shapes.devs.LaunchModel({
+                  position: {
+                    x: 15, 
+                    y: 180
+                  }
+                });
+                var subtractPaddingTop = 240;
+                var size = launch.size();
+                console.log("launch size is ", size);
+                /*
+                launch.position(
+                  $("#canvas").width() / 2 - (size.width / 2),
+                  ($("#canvas").height()/2 - (size.height / 2)) - subtractPaddingTop
+                );
+                */
 
-                labelAlign();
+                graph.addCell(launch);
+                $scope.createModel(launch, "Launch");
+                $shared.isLoading = false;
+              }
 
-              }, 0);
-            });
-          }
-        }, 0);
-      });
+              labelAlign();
+
+            }, 0);
+          });
+        }
+      }, 0);
     }
     $scope.load = load;
     load();
@@ -3170,12 +3158,6 @@ var stencilLibraryGraph = new joint.dia.Graph,
   appendStencilModels(stencilGraph, [
        joint.shapes.devs.CallCapacityModel,
        joint.shapes.devs.LowCostModel,
-       /*
-       joint.shapes.devs.HighCostModel,
-       joint.shapes.devs.LocationCheckModel,
-       joint.shapes.devs.UserPriorityModel,
-       joint.shapes.devs.SortServersModel,
-       */
        joint.shapes.devs.EndRoutingModel,
        joint.shapes.devs.NoRoutingModel
 

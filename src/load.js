@@ -367,10 +367,6 @@ var stencilLibraryGraph = new joint.dia.Graph,
   appendStencilModels(stencilGraph, [
        joint.shapes.devs.CallCapacityModel,
        joint.shapes.devs.LowCostModel,
-       joint.shapes.devs.HighCostModel,
-       joint.shapes.devs.LocationCheckModel,
-       joint.shapes.devs.UserPriorityModel,
-       joint.shapes.devs.SortServersModel,
        joint.shapes.devs.EndRoutingModel,
        joint.shapes.devs.NoRoutingModel
 
